@@ -8,10 +8,10 @@ Load RediSearch module into Redis cluster.
 sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/latest/download/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly && /usr/local/bin/earthly bootstrap --with-autocomplete'
 ```
 
-2. Build RediSearch module with coordinator.
+2. Build RediSearch and RedisTimeSeries module with coordinator.
 
 ```bash
-earthly +build
+earthly +all
 ```
 
 3. Setup Redis cluster.
