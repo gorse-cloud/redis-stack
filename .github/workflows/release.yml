@@ -1,0 +1,54 @@
+name: Release modules
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Redis modules
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git
+
+      - name: Build RediSearch module
+        run: |
+          git clone --recursive --depth 1 --branch v2.10.10 https://github.com/RediSearch/RediSearch.git /tmp/RediSearch
+          cd /tmp/RediSearch
+          cd .install
+          ./install_script.sh sudo
+          ./install_boost.sh 1.83.0
+          cd ..
+          make setup
+          make build COORD=1
+          mkdir -p "$GITHUB_WORKSPACE/modules"
+          cp /tmp/RediSearch/bin/linux-x64-release/coord-oss/module-oss.so "$GITHUB_WORKSPACE/modules/module-oss.so"
+
+      - name: Build RedisTimeSeries module
+        run: |
+          git clone --recursive --depth 1 --branch v1.12.5 https://github.com/RedisTimeSeries/RedisTimeSeries.git /tmp/RedisTimeSeries
+          cd /tmp/RedisTimeSeries
+          ./sbin/setup
+          bash -lc 'make'
+          mkdir -p "$GITHUB_WORKSPACE/modules"
+          cp /tmp/RedisTimeSeries/bin/linux-x64-release/redistimeseries.so "$GITHUB_WORKSPACE/modules/redistimeseries.so"
+
+      - name: List modules
+        run: ls -lh modules/*.so
+
+      - name: Upload modules to release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$RELEASE_TAG" modules/*.so --clobber
