@@ -1,6 +1,6 @@
 # Redis Cluster
 
-Start a Redis cluster with RediSearch and RedisTimeSeries modules loaded in GitHub Actions.
+Start a Redis 8 cluster with built-in Search and TimeSeries in GitHub Actions.
 
 ## Usage
 
@@ -13,9 +13,8 @@ Use this action in a GitHub Actions workflow to start a Redis cluster before run
 
 The action:
 
-1. downloads `module-oss.so` and `redistimeseries.so` from a `gorse-cloud/redis-cluster` GitHub release
-2. starts the six-node Redis cluster via Docker Compose
-3. waits until Redis replies to `PING`
+1. starts the six-node Redis 8 cluster via Docker Compose
+2. waits until the Redis cluster reports `cluster_state:ok`
 
 After the action finishes, the cluster is available on ports `7000` through `7005`.
 
@@ -23,7 +22,6 @@ After the action finishes, the cluster is available on ports `7000` through `700
 
 | Input | Default | Description |
 | --- | --- | --- |
-| `release-tag` | `""` | GitHub release tag to download module artifacts from. Empty uses the latest release. |
 | `port` | `7005` | Redis cluster port used for the health check. |
 | `retries` | `12` | Number of health check attempts. |
 | `interval-seconds` | `5` | Seconds to wait between health check attempts. |
