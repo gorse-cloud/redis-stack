@@ -1,7 +1,7 @@
 VERSION 0.8
 FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install -y git
+RUN apt-get update && apt-get install -y git python3
 
 all:
     BUILD +redisearch
@@ -11,7 +11,7 @@ redisearch:
     WORKDIR /RediSearch
     RUN git clone --recursive --depth 1 --branch v2.10.10 https://github.com/RediSearch/RediSearch.git /RediSearch
     RUN cd .install && ./install_script.sh && ./install_boost.sh 1.83.0
-    RUN make setup && make build COORD=1
+    RUN make build COORD=1
     SAVE ARTIFACT /RediSearch/bin/linux-x64-release/coord-oss/module-oss.so AS LOCAL modules/module-oss.so
 
 redistimeseries:

@@ -1,27 +1,29 @@
-# RediSearch
+# Redis Cluster
 
-Load RediSearch module into Redis cluster.
+Start a Redis cluster with RediSearch and RedisTimeSeries modules loaded in GitHub Actions.
 
-1. Install Earthly.
+## Usage
 
-```bash
-sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/latest/download/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly && /usr/local/bin/earthly bootstrap --with-autocomplete'
+Use this action in a GitHub Actions workflow to start a Redis cluster before running tests or other CI tasks.
+
+```yaml
+- name: Setup Redis cluster
+  uses: gorse-cloud/redis-cluster@<tag>
 ```
 
-2. Build RediSearch and RedisTimeSeries module with coordinator.
+The action:
 
-```bash
-earthly +all
-```
+1. downloads `module-oss.so` and `redistimeseries.so` from a `gorse-cloud/redis-cluster` GitHub release
+2. starts the six-node Redis cluster via Docker Compose
+3. waits until Redis replies to `PING`
 
-3. Setup Redis cluster.
+After the action finishes, the cluster is available on ports `7000` through `7005`.
 
-```bash
-docker compose up -d
-```
+## Inputs
 
-4. Connect to Redis cluster.
-
-```bash
-redis-cli -c -h localhost -p 7005
-```
+| Input | Default | Description |
+| --- | --- | --- |
+| `release-tag` | `""` | GitHub release tag to download module artifacts from. Empty uses the latest release. |
+| `port` | `7005` | Redis cluster port used for the health check. |
+| `retries` | `12` | Number of health check attempts. |
+| `interval-seconds` | `5` | Seconds to wait between health check attempts. |
