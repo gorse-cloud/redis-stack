@@ -1,11 +1,7 @@
 name: Setup Redis cluster
-description: Download released Redis modules and start a local Redis cluster.
+description: Start a local Redis 8 cluster with built-in Search and TimeSeries.
 
 inputs:
-  release-tag:
-    description: GitHub release tag to download module artifacts from. Empty uses the latest release.
-    required: false
-    default: ""
   port:
     description: Redis cluster port used for the health check.
     required: false
@@ -26,30 +22,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Download Redis modules
-      shell: bash
-      env:
-        RELEASE_TAG: ${{ inputs.release-tag }}
-      run: |
-        set -euo pipefail
-
-        mkdir -p "$GITHUB_ACTION_PATH/modules"
-        rm -f "$GITHUB_ACTION_PATH/modules"/*.so
-
-        if [ -n "$RELEASE_TAG" ]; then
-          release_url="https://github.com/gorse-cloud/redis-cluster/releases/download/$RELEASE_TAG"
-        else
-          release_url="https://github.com/gorse-cloud/redis-cluster/releases/latest/download"
-        fi
-
-        curl -fsSL --retry 3 "$release_url/module-oss.so" \
-          -o "$GITHUB_ACTION_PATH/modules/module-oss.so"
-        curl -fsSL --retry 3 "$release_url/redistimeseries.so" \
-          -o "$GITHUB_ACTION_PATH/modules/redistimeseries.so"
-
-        test -s "$GITHUB_ACTION_PATH/modules/module-oss.so"
-        test -s "$GITHUB_ACTION_PATH/modules/redistimeseries.so"
-
     - name: Start Redis cluster
       shell: bash
       env:
@@ -74,7 +46,8 @@ runs:
         set -euo pipefail
 
         for i in $(seq 1 "$RETRIES"); do
-          if redis-cli -p "$PORT" ping | grep -q PONG; then
+          if docker run --rm --network host docker.io/library/redis:8 \
+              redis-cli -p "$PORT" cluster info | grep -q 'cluster_state:ok'; then
             exit 0
           fi
           sleep "$INTERVAL_SECONDS"
