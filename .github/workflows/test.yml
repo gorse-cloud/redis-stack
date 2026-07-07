@@ -1,0 +1,46 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Redis cluster
+        uses: ./
+        with:
+          project-name: redis-cluster-test
+
+      - name: Verify Redis cluster
+        run: |
+          set -euo pipefail
+
+          docker run --rm --network host docker.io/library/redis:8 \
+            redis-cli -p 7005 cluster info | grep -q 'cluster_state:ok'
+          docker run --rm --network host docker.io/library/redis:8 \
+            redis-cli -p 7005 cluster info | grep -q 'cluster_slots_ok:16384'
+
+          docker run --rm --network host docker.io/library/redis:8 \
+            redis-cli -c -p 7005 set redis-cluster-test ok
+          docker run --rm --network host docker.io/library/redis:8 \
+            redis-cli -c -p 7005 get redis-cluster-test | grep -q '^ok$'
+
+          docker run --rm --network host docker.io/library/redis:8 \
+            redis-cli -c -p 7005 FT._LIST
+          docker run --rm --network host docker.io/library/redis:8 \
+            redis-cli -c -p 7005 TS.INFO __missing__ 2>&1 | grep -q 'TSDB: the key does not exist'
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.yml --project-directory . --project-name redis-cluster-test logs --tail=100
+
+      - name: Stop Redis cluster
+        if: always()
+        run: docker compose -f docker-compose.yml --project-directory . --project-name redis-cluster-test down -v --remove-orphans
